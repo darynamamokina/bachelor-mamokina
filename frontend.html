@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <title>Інтелектуальний пошук одягу</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f4f6;
+      color: #111;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 40px;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 42px;
+      margin-bottom: 30px;
+    }
+
+    .search-box {
+      display: grid;
+      grid-template-columns: 1fr 180px 120px;
+      gap: 14px;
+      margin-bottom: 30px;
+    }
+
+    input, select, button {
+      padding: 16px;
+      font-size: 18px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background: #111;
+      color: #fff;
+      cursor: pointer;
+      border: none;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #333;
+      transform: translateY(-1px);
+    }
+
+    .parsed {
+      background: #f7f7f7;
+      padding: 18px;
+      border-radius: 14px;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .products {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .product {
+      position: relative;
+      border: 1px solid #e3e3e3;
+      border-radius: 20px;
+      overflow: hidden;
+      background: #fff;
+      transition: 0.2s;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+    }
+
+    .product:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+    .top-match {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: #111;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      z-index: 2;
+    }
+
+    .image {
+        height: 320px;
+        overflow: hidden;
+        background: #f0f0f0;
+    }
+
+    .image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .content {
+      padding: 22px;
+    }
+
+    .content h3 {
+      margin: 0 0 10px;
+      font-size: 24px;
+    }
+
+    .description {
+      color: #555;
+      min-height: 48px;
+      margin-bottom: 15px;
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .badge {
+      background: #f0f0f0;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+    }
+
+    .price {
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 16px;
+    }
+
+    .score {
+      color: #777;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .score-bar {
+      width: 100%;
+      height: 8px;
+      background: #e8e8e8;
+      border-radius: 999px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: #111;
+      border-radius: 999px;
+    }
+
+    .empty {
+      text-align: center;
+      padding: 40px;
+      color: #777;
+      font-size: 20px;
+    }
+
+    .examples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 25px;
+    }
+
+    .examples button {
+      background: #f0f0f0;
+      color: #111;
+      font-size: 14px;
+      padding: 10px 14px;
+    }
+
+    .examples button:hover {
+      background: #ddd;
+    }
+    .subtitle {
+      text-align: center;
+      color: #666;
+      font-size: 18px;
+      max-width: 760px;
+      margin: -15px auto 35px;
+      line-height: 1.5;
+    }
+    .details-btn {
+      width: 100%;
+      margin-top: 16px;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 12px;
+      background: #111;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    .details-btn:hover {
+      background: #333;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      z-index: 1000;
+      padding: 40px 20px;
+      overflow-y: auto;
+    }
+
+    .modal.active {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 900px;
+      background: #fff;
+      border-radius: 24px;
+      padding: 28px;
+      position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      font-size: 26px;
+      padding: 0;
+      background: #f0f0f0;
+      color: #111;
+    }
+
+    .modal-product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 28px;
+    }
+
+    .modal-product img {
+      width: 100%;
+      height: 520px;
+      object-fit: cover;
+      border-radius: 18px;
+      background: #f0f0f0;
+    }
+
+    .modal-info h2 {
+      font-size: 32px;
+      margin: 0 0 14px;
+    }
+
+    .modal-description {
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+
+    .modal-row {
+      margin: 10px 0;
+      font-size: 17px;
+    }
+
+    .product-link {
+      display: inline-block;
+      margin-top: 22px;
+      padding: 15px 22px;
+      background: #111;
+      color: white;
+      border-radius: 12px;
+      text-decoration: none;
+      font-size: 17px;
+    }
+
+    .product-link:hover {
+      background: #333;
+    }
+
+    @media (max-width: 800px) {
+      .modal-product {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-product img {
+        height: 360px;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .search-box {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Інтелектуальний пошук одягу</h1>
+    <p class="subtitle">
+      Система аналізує запит природною мовою та підбирає товари за змістом, стилем, кольором і релевантністю.
+    </p>
+
+    <div class="search-box">
+      <input id="query" placeholder="Наприклад: щось чорне стильне" />
+
+      <select id="sortBy">
+        <option value="hybrid">Hybrid</option>
+        <option value="semantic">Semantic</option>
+        <option value="relevance">Relevance</option>
+        <option value="price_asc">Ціна ↑</option>
+        <option value="price_desc">Ціна ↓</option>
+      </select>
+
+      <button onclick="searchProducts()">Пошук</button>
+    </div>
+
+    <div class="examples">
+      <button onclick="setExample('щось чорне елегантне для вечора')">чорне елегантне</button>
+      <button onclick="setExample('зручне худі унісекс')">худі унісекс</button>
+      <button onclick="setExample('сині джинси для чоловіка')">чоловічі джинси</button>
+      <button onclick="setExample('біла жіноча сорочка')">біла сорочка</button>
+    </div>
+
+    <div id="parsed"></div>
+    <div id="results" class="products"></div>
+    <div id="productModal" class="modal">
+      <div class="modal-content">
+        <button class="modal-close" onclick="closeProductModal()">×</button>
+        <div id="modalBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const translate = {
+      dress: "Сукня",
+      hoodie: "Худі",
+      tshirt: "Футболка",
+      shirt: "Сорочка",
+      pants: "Штани",
+      jeans: "Джинси",
+      jacket: "Куртка",
+      coat: "Пальто",
+
+      elegant: "Елегантний",
+      casual: "Повсякденний",
+      sport: "Спортивний",
+      classic: "Класичний",
+
+      black: "Чорний",
+      white: "Білий",
+      red: "Червоний",
+      blue: "Синій",
+      beige: "Бежевий",
+      gray: "Сірий",
+
+      female: "Жіночий",
+      male: "Чоловічий",
+      unisex: "Унісекс",
+
+      cotton: "Бавовна",
+      polyester: "Поліестер",
+      viscose: "Віскоза",
+      linen: "Льон",
+      wool: "Вовна"
+    };
+
+    function setExample(text) {
+      document.getElementById("query").value = text;
+      searchProducts();
+    }
+
+    function t(value) {
+      return translate[value] || value || "-";
+    }
+    function formatScore(score, sortBy) {
+      const value = Number(score) || 0;
+
+      if (sortBy === "relevance") {
+        return `Збігів: ${value}/3`;
+      }
+
+      const normalized = value > 1 ? value / 3 : value;
+      return `AI relevance: ${Math.min(normalized * 100, 100).toFixed(1)}%`;
+    }
+    function getMatchedFields(product) {
+      const matches = [];
+
+      if (currentParsedQuery.category && product.category === currentParsedQuery.category) {
+        matches.push("Категорія");
+      }
+
+      if (currentParsedQuery.color && product.color === currentParsedQuery.color) {
+        matches.push("Колір");
+      }
+
+      if (currentParsedQuery.style && product.style === currentParsedQuery.style) {
+        matches.push("Стиль");
+      }
+
+      if (currentParsedQuery.gender && product.gender === currentParsedQuery.gender) {
+        matches.push("Стать");
+      }
+
+      if (currentParsedQuery.material && product.material === currentParsedQuery.material) {
+        matches.push("Матеріал");
+      }
+
+      return matches;
+    }
+
+    function formatMatches(product) {
+      const matches = getMatchedFields(product);
+
+      if (matches.length === 0) {
+        return "не визначено";
+      }
+
+      return matches.join(", ");
+    }
+    function getAiPercent(score) {
+      const value = Number(score) || 0;
+
+      if (value <= 1) {
+        return Math.min(value * 100, 100);
+      }
+
+      const maxScore = Math.max(
+        ...currentResults.map(product => Number(product.score) || 0),
+        value
+      );
+
+      return maxScore > 0 ? Math.min((value / maxScore) * 100, 100) : 0;
+    }
+
+    function getPriceFilterText() {
+      const minPrice = currentParsedQuery.min_price;
+      const maxPrice = currentParsedQuery.max_price;
+
+      if (minPrice && maxPrice) {
+        return `Ціна: від ${minPrice} до ${maxPrice} грн`;
+      }
+
+      if (maxPrice) {
+        return `Ціна: до ${maxPrice} грн`;
+      }
+
+      if (minPrice) {
+        return `Ціна: від ${minPrice} грн`;
+      }
+
+      return null;
+    }
+
+    function getScoreText(product) {
+      const sortBy = document.getElementById("sortBy").value;
+      const priceText = getPriceFilterText();
+
+      if (sortBy === "relevance") {
+        return `Збіги: ${formatMatches(product)}`;
+      }
+
+      if (sortBy === "semantic" || sortBy === "hybrid") {
+        return `AI relevance: ${getAiPercent(product.score).toFixed(1)}%`;
+      }
+
+      if (sortBy === "price_asc") {
+        return priceText || "Сортування: спочатку дешевші";
+      }
+
+      if (sortBy === "price_desc") {
+        return priceText || "Сортування: спочатку дорожчі";
+      }
+
+      return "";
+    }
+    let currentResults = [];
+    let currentParsedQuery = {};
+
+
+    function getImageUrl(url) {
+      if (!url) return "";
+      return url.startsWith("http") ? url : `http://127.0.0.1:8000${url}`;
+    }
+
+    async function searchProducts() {
+      const query = document.getElementById("query").value;
+      const sortBy = document.getElementById("sortBy").value;
+      const resultsDiv = document.getElementById("results");
+
+      resultsDiv.innerHTML = `<div class="empty">Пошук...</div>`;
+
+      const response = await fetch("http://127.0.0.1:8000/search/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          query: query,
+          sort_by: sortBy,
+          limit: 10
+        })
+      });
+
+      const data = await response.json();
+      currentResults = data.results;
+      currentParsedQuery = data.parsed_query || {};
+
+      document.getElementById("parsed").innerHTML = `
+        <div class="parsed">
+          <b>Система розпізнала:</b>
+          <div class="badges">
+            <span class="badge">Категорія: ${t(data.parsed_query.category)}</span>
+            <span class="badge">Колір: ${t(data.parsed_query.color)}</span>
+            <span class="badge">Стиль: ${t(data.parsed_query.style)}</span>
+            <span class="badge">Стать: ${t(data.parsed_query.gender)}</span>
+          </div>
+        </div>
+      `;
+
+      if (data.results.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="empty">
+            Нічого не знайдено. Спробуйте інший запит.
+          </div>
+        `;
+        return;
+      }
+
+      resultsDiv.innerHTML = data.results.map((product, index) => `
+        <div class="product">
+          <div class="image">
+            <img src="${getImageUrl(product.image_url)}" alt="${product.title}">
+          </div>
+
+          <div class="content">
+            <h3>${product.title}</h3>
+
+            <p class="description">
+              ${product.description || "Опис товару відсутній."}
+            </p>
+
+            <div class="badges">
+              <span class="badge">${t(product.category)}</span>
+              <span class="badge">${t(product.style)}</span>
+              <span class="badge">${t(product.color)}</span>
+              <span class="badge">${t(product.gender)}</span>
+              <span class="badge">Розмір ${product.size || "-"}</span>
+              <span class="badge">${t(product.material)}</span>
+            </div>
+
+            <p><b>Бренд:</b> ${product.brand || "-"}</p>
+            <p><b>Магазин:</b> ${product.store || "-"}</p>
+
+            <div class="price">${product.price} грн</div>
+
+          <div class="score">
+            ${getScoreText(product)}
+          </div>
+
+          <button class="details-btn" onclick="openProductModal(${index})">
+            Детальніше
+          </button>
+          </div>
+        </div>
+      `).join("");
+    }
+    function openProductModal(index) {
+      const product = currentResults[index];
+
+      document.getElementById("modalBody").innerHTML = `
+        <div class="modal-product">
+          <img src="${getImageUrl(product.image_url)}" alt="${product.title}">
+
+          <div class="modal-info">
+            <h2>${product.title}</h2>
+
+            <p class="modal-description">
+              ${product.description || "Опис товару відсутній."}
+            </p>
+
+            <div class="modal-row"><b>Категорія:</b> ${t(product.category)}</div>
+            <div class="modal-row"><b>Стиль:</b> ${t(product.style)}</div>
+            <div class="modal-row"><b>Колір:</b> ${t(product.color)}</div>
+            <div class="modal-row"><b>Стать:</b> ${t(product.gender)}</div>
+            <div class="modal-row"><b>Розмір:</b> ${product.size || "-"}</div>
+            <div class="modal-row"><b>Матеріал:</b> ${t(product.material)}</div>
+            <div class="modal-row"><b>Бренд:</b> ${product.brand || "-"}</div>
+            <div class="modal-row"><b>Магазин:</b> ${product.store || "-"}</div>
+            <div class="modal-row"><b>Ціна:</b> ${product.price} грн</div>
+            <div class="modal-row"><b>Оцінка:</b> ${getScoreText(product)}</div>
+
+            ${
+              product.product_url
+                ? `<a class="product-link" href="${product.product_url}" target="_blank">Перейти до товару</a>`
+                : `<p class="modal-row"><b>Посилання:</b> не додано</p>`
+            }
+          </div>
+        </div>
+      `;
+
+      document.getElementById("productModal").classList.add("active");
+    }
+
+    function closeProductModal() {
+      document.getElementById("productModal").classList.remove("active");
+    }
+  </script>
+</body>
+</html>
